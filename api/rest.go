@@ -36,6 +36,7 @@ func (s *RESTServer) Start() error {
 
         // Register API endpoints
         mux.HandleFunc("/api/translate", s.handleTranslate)
+        mux.HandleFunc("/api/translate/text", s.handleTranslateText)
         mux.HandleFunc("/api/summarize", s.handleSummarize)
         mux.HandleFunc("/api/health", s.handleHealth)
         
@@ -101,8 +102,8 @@ func (s *RESTServer) handleTranslate(w http.ResponseWriter, r *http.Request) {
                 scriptType = "auto" // Default to auto-detection
         }
 
-        // Process and translate the manuscript
-        processedText, err := s.serviceHandler.ProcessAndTranslate(fileBytes, scriptType)
+        // Process, translate the manuscript, and extract metadata
+        processedText, metadata, err := s.serviceHandler.ProcessTranslateWithMetadata(fileBytes, scriptType)
         if err != nil {
                 s.logger.Error("Failed to process and translate manuscript", "error", err)
                 http.Error(w, fmt.Sprintf("Failed to process and translate manuscript: %v", err), http.StatusInternalServerError)
@@ -122,6 +123,7 @@ func (s *RESTServer) handleTranslate(w http.ResponseWriter, r *http.Request) {
                 OriginalScript: scriptType,
                 TranslatedText: processedText,
                 Summary:        summary,
+                Metadata:       metadata,
                 ProcessedAt:    time.Now().Format(time.RFC3339),
         }
 
@@ -190,6 +192,70 @@ func (s *RESTServer) handleHealth(w http.ResponseWriter, r *http.Request) {
         response := map[string]string{
                 "status": "healthy",
                 "time":   time.Now().Format(time.RFC3339),
+        }
+
+        // Send JSON response
+        w.Header().Set("Content-Type", "application/json")
+        if err := json.NewEncoder(w).Encode(response); err != nil {
+                s.logger.Error("Failed to encode response", "error", err)
+                http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+                return
+        }
+}
+
+// handleTranslateText handles the direct text translation and metadata extraction request
+func (s *RESTServer) handleTranslateText(w http.ResponseWriter, r *http.Request) {
+        if r.Method != http.MethodPost {
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request
+        var request struct {
+                OriginalText string `json:"originalText"`
+                ScriptType   string `json:"scriptType"`
+        }
+        
+        if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+                s.logger.Error("Failed to parse request", "error", err)
+                http.Error(w, "Failed to parse request", http.StatusBadRequest)
+                return
+        }
+
+        // Validate request
+        if request.OriginalText == "" {
+                http.Error(w, "Text cannot be empty", http.StatusBadRequest)
+                return
+        }
+
+        if request.ScriptType == "" {
+                request.ScriptType = "auto" // Default to auto-detection
+        }
+
+        // For direct text input, we skip the image processing step
+        // and extract metadata directly from the text
+        metadata, err := s.serviceHandler.ExtractMetadata(request.OriginalText, request.ScriptType)
+        if err != nil {
+                s.logger.Error("Failed to extract metadata", "error", err)
+                http.Error(w, fmt.Sprintf("Failed to extract metadata: %v", err), http.StatusInternalServerError)
+                return
+        }
+
+        // Generate summary for the text
+        summary, err := s.serviceHandler.SummarizeText(request.OriginalText)
+        if err != nil {
+                s.logger.Error("Failed to generate summary", "error", err)
+                http.Error(w, fmt.Sprintf("Failed to generate summary: %v", err), http.StatusInternalServerError)
+                return
+        }
+
+        // Create response
+        response := models.TranslationResponse{
+                OriginalScript: request.ScriptType,
+                TranslatedText: request.OriginalText, // For text input, we don't translate
+                Summary:        summary,
+                Metadata:       metadata,
+                ProcessedAt:    time.Now().Format(time.RFC3339),
         }
 
         // Send JSON response

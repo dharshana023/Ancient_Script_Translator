@@ -19,11 +19,47 @@ message TranslateRequest {
   string script_type = 2;
 }
 
-// TranslateResponse contains the translation and summary
+// TranslateResponse contains the translation, summary and historical metadata
 message TranslateResponse {
   string original_script = 1;
   string translated_text = 2;
   string summary = 3;
+  MetadataResponse metadata = 4;
+}
+
+// MetadataResponse contains historical context information
+message MetadataResponse {
+  string script_type = 1;
+  repeated TimePeriod time_periods = 2;
+  repeated Region regions = 3;
+  repeated string cultural_context = 4;
+  repeated string material_context = 5;
+  repeated HistoricalEvent historical_events = 6;
+  double confidence_score = 7;
+  string detected_date = 8;
+}
+
+// TimePeriod represents a historical time period
+message TimePeriod {
+  string name = 1;
+  int32 start_year = 2;
+  int32 end_year = 3;
+  string description = 4;
+}
+
+// Region represents a geographical region
+message Region {
+  string name = 1;
+  repeated string modern_areas = 2;
+  string description = 3;
+}
+
+// HistoricalEvent represents an event referenced in the manuscript
+message HistoricalEvent {
+  string name = 1;
+  string event_type = 2;
+  int32 year = 3;
+  string description = 4;
 }
 
 // SummarizeRequest contains the text to summarize

@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# Test script to verify that different texts produce unique summaries
+# Test script for verifying the enhanced summarization features:
+# - Unique, content-aware summarization for different texts
+# - Support for different summarization algorithms (extractive, hybrid)
+# - Domain-specific templates based on content type (scientific, historical, literary)
+# - Improved keyword extraction with TF-IDF-like scoring and concept diversity
+# - Bigram support for more specific concept identification
 
 echo "Testing summarization functionality..."
 echo "Sending test request 1..."
@@ -27,4 +32,13 @@ curl -s -X POST -H "Content-Type: application/json" -d '{
     "algorithm": "hybrid"
 }' http://localhost:5000/api/summarize
 
-echo -e "\nThe summaries should be different if the fix is working correctly."
+echo -e "\nSending test request 4 (same text as #3 but with extractive algorithm)..."
+
+# Fourth test - same as third but with extractive algorithm
+curl -s -X POST -H "Content-Type: application/json" -d '{
+    "text": "Shakespeare wrote 37 plays and 154 sonnets. His works include tragedies such as Hamlet, Macbeth, and Romeo and Juliet, as well as comedies like A Midsummer Nights Dream and Much Ado About Nothing. His plays continue to be performed and adapted worldwide, influencing literature, theater, and popular culture. Shakespeares use of language and his exploration of human emotions set a standard for storytelling.",
+    "algorithm": "extractive"
+}' http://localhost:5000/api/summarize
+
+echo -e "\nThe summaries should be different for the same text with different algorithms."
+echo -e "All summaries should be unique and content-specific."

@@ -29,3 +29,10 @@ summarization:
   keyphrasesPerDoc: 5
   minSentenceLength: 3
   enableEntityRecognition: true
+
+metadata:
+  enableGeographicDetection: true
+  enablePeriodDetection: true
+  enableCultureDetection: true
+  contextSensitivity: 0.7
+  referenceDatabase: ""

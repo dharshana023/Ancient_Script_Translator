@@ -40,9 +40,13 @@ func main() {
         // Initialize the new improved summarizer
         summarizer := services.NewSummarizer(config.Summarization)
         logger.Info("Initialized new context-aware summarizer with improved NLP techniques")
+        
+        // Initialize the metadata extractor for historical context
+        metadataExtractor := services.NewMetadataExtractor(config.Metadata, logger)
+        logger.Info("Initialized metadata extractor for historical context analysis")
 
         // Create service handler
-        serviceHandler := services.NewServiceHandler(imageProcessor, translator, summarizer, logger)
+        serviceHandler := services.NewServiceHandler(imageProcessor, translator, summarizer, metadataExtractor, logger)
 
         // Start REST API server
         restServer := api.NewRESTServer(config.REST.Port, serviceHandler, logger)

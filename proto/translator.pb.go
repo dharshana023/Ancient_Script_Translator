@@ -15,11 +15,47 @@ type TranslateRequest struct {
         ScriptType      string  `protobuf:"bytes,2,opt,name=script_type,json=scriptType,proto3" json:"script_type,omitempty"`
 }
 
-// TranslateResponse contains the translation and summary
+// TranslateResponse contains the translation, summary and historical metadata
 type TranslateResponse struct {
-        OriginalScript string `protobuf:"bytes,1,opt,name=original_script,json=originalScript,proto3" json:"original_script,omitempty"`
-        TranslatedText string `protobuf:"bytes,2,opt,name=translated_text,json=translatedText,proto3" json:"translated_text,omitempty"`
-        Summary        string `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+        OriginalScript string           `protobuf:"bytes,1,opt,name=original_script,json=originalScript,proto3" json:"original_script,omitempty"`
+        TranslatedText string           `protobuf:"bytes,2,opt,name=translated_text,json=translatedText,proto3" json:"translated_text,omitempty"`
+        Summary        string           `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+        Metadata       *MetadataResponse `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
+}
+
+// MetadataResponse contains historical context information
+type MetadataResponse struct {
+        ScriptType       string            `protobuf:"bytes,1,opt,name=script_type,json=scriptType,proto3" json:"script_type,omitempty"`
+        TimePeriods      []*TimePeriod     `protobuf:"bytes,2,rep,name=time_periods,json=timePeriods,proto3" json:"time_periods,omitempty"`
+        Regions          []*Region         `protobuf:"bytes,3,rep,name=regions,proto3" json:"regions,omitempty"`
+        CulturalContext  []string          `protobuf:"bytes,4,rep,name=cultural_context,json=culturalContext,proto3" json:"cultural_context,omitempty"`
+        MaterialContext  []string          `protobuf:"bytes,5,rep,name=material_context,json=materialContext,proto3" json:"material_context,omitempty"`
+        HistoricalEvents []*HistoricalEvent `protobuf:"bytes,6,rep,name=historical_events,json=historicalEvents,proto3" json:"historical_events,omitempty"`
+        ConfidenceScore  float64           `protobuf:"fixed64,7,opt,name=confidence_score,json=confidenceScore,proto3" json:"confidence_score,omitempty"`
+        DetectedDate     string            `protobuf:"bytes,8,opt,name=detected_date,json=detectedDate,proto3" json:"detected_date,omitempty"`
+}
+
+// TimePeriod represents a historical time period
+type TimePeriod struct {
+        Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+        StartYear   int32  `protobuf:"varint,2,opt,name=start_year,json=startYear,proto3" json:"start_year,omitempty"`
+        EndYear     int32  `protobuf:"varint,3,opt,name=end_year,json=endYear,proto3" json:"end_year,omitempty"`
+        Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+}
+
+// Region represents a geographical region
+type Region struct {
+        Name        string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+        ModernAreas []string `protobuf:"bytes,2,rep,name=modern_areas,json=modernAreas,proto3" json:"modern_areas,omitempty"`
+        Description string   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+}
+
+// HistoricalEvent represents an event referenced in the manuscript
+type HistoricalEvent struct {
+        Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+        EventType   string `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+        Year        int32  `protobuf:"varint,3,opt,name=year,proto3" json:"year,omitempty"`
+        Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 }
 
 // SummarizeRequest contains the text to summarize

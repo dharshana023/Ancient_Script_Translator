@@ -1,24 +1,27 @@
 package services
 
 import (
+        "ancient-script-decoder/models"
         "ancient-script-decoder/utils"
 )
 
 // ServiceHandler coordinates the different services
 type ServiceHandler struct {
-        imageProcessor *ImageProcessor
-        translator     *Translator
-        summarizer     *Summarizer
-        logger         *utils.Logger
+        imageProcessor   *ImageProcessor
+        translator       *Translator
+        summarizer       *Summarizer
+        metadataExtractor *MetadataExtractor
+        logger           *utils.Logger
 }
 
 // NewServiceHandler creates a new service handler
-func NewServiceHandler(imageProcessor *ImageProcessor, translator *Translator, summarizer *Summarizer, logger *utils.Logger) *ServiceHandler {
+func NewServiceHandler(imageProcessor *ImageProcessor, translator *Translator, summarizer *Summarizer, metadataExtractor *MetadataExtractor, logger *utils.Logger) *ServiceHandler {
         return &ServiceHandler{
-                imageProcessor: imageProcessor,
-                translator:     translator,
-                summarizer:     summarizer,
-                logger:         logger,
+                imageProcessor:   imageProcessor,
+                translator:       translator,
+                summarizer:       summarizer,
+                metadataExtractor: metadataExtractor,
+                logger:           logger,
         }
 }
 
@@ -81,4 +84,49 @@ func (h *ServiceHandler) SummarizeTextWithAlgorithm(text string, algorithm strin
         
         h.logger.Info("Summary generated successfully", "summaryLength", len(summary), "algorithm", algorithm)
         return summary, nil
+}
+
+// ExtractMetadata extracts historical context metadata from translated text and original manuscript
+// If imageData is nil, metadata will be extracted from text only (for direct text input)
+func (h *ServiceHandler) ExtractMetadata(translatedText string, scriptType string, imageData ...[]byte) (models.Metadata, error) {
+        h.logger.Info("Extracting historical metadata", "scriptType", scriptType, "textLength", len(translatedText))
+        
+        // For direct text input without an image
+        var imgData []byte
+        if len(imageData) > 0 {
+                imgData = imageData[0]
+        }
+        
+        metadata, err := h.metadataExtractor.ExtractMetadata(translatedText, scriptType, imgData)
+        if err != nil {
+                h.logger.Error("Failed to extract metadata", "error", err)
+                return models.Metadata{}, err
+        }
+        
+        h.logger.Info("Metadata extraction successful", 
+                "timePeriods", len(metadata.TimePeriods), 
+                "regions", len(metadata.Regions),
+                "cultures", len(metadata.CulturalContext),
+                "confidence", metadata.ConfidenceScore)
+        
+        return metadata, nil
+}
+
+// ProcessTranslateWithMetadata processes, translates, and extracts metadata in one operation
+func (h *ServiceHandler) ProcessTranslateWithMetadata(imageData []byte, scriptType string) (string, models.Metadata, error) {
+        // First translate the text
+        translatedText, err := h.ProcessAndTranslate(imageData, scriptType)
+        if err != nil {
+                return "", models.Metadata{}, err
+        }
+        
+        // Extract metadata from translated text and original image
+        metadata, err := h.ExtractMetadata(translatedText, scriptType, imageData)
+        if err != nil {
+                // Don't fail the whole operation if metadata extraction fails
+                h.logger.Error("Metadata extraction failed, continuing with empty metadata", "error", err)
+                return translatedText, models.Metadata{}, nil
+        }
+        
+        return translatedText, metadata, nil
 }
