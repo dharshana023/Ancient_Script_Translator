@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ancient Script Decoder</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <svg class="me-3" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h1 class="h3 mb-0">Ancient Script Decoder</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h5 mb-0">Upload Manuscript</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm">
+                            <div class="mb-3">
+                                <label for="manuscriptFile" class="form-label">Manuscript Image</label>
+                                <input type="file" class="form-control" id="manuscriptFile" name="manuscript" accept="image/*" required>
+                                <div class="form-text">Upload an image of an ancient manuscript (JPEG, PNG).</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="scriptType" class="form-label">Script Type</label>
+                                <select class="form-select" id="scriptType" name="scriptType">
+                                    <option value="auto">Auto-detect</option>
+                                    <option value="latin">Latin</option>
+                                    <option value="greek">Greek</option>
+                                    <option value="cuneiform">Cuneiform</option>
+                                    <option value="hieroglyphic">Hieroglyphic</option>
+                                    <option value="runic">Runic</option>
+                                </select>
+                                <div class="form-text">Select the type of script or let the system auto-detect.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Translate
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h2 class="h5 mb-0">Direct Text Summarization</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="summarizeForm">
+                            <div class="mb-3">
+                                <label for="textToSummarize" class="form-label">Text to Summarize</label>
+                                <textarea class="form-control" id="textToSummarize" name="text" rows="5" required></textarea>
+                                <div class="form-text">Enter translated text to generate a summary.</div>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                                    <line x1="21" y1="10" x2="3" y2="10"></line>
+                                    <line x1="21" y1="6" x2="3" y2="6"></line>
+                                    <line x1="21" y1="14" x2="3" y2="14"></line>
+                                    <line x1="21" y1="18" x2="7" y2="18"></line>
+                                </svg>
+                                Summarize
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="h5 mb-0">Translation Result</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingTranslation" class="d-none">
+                            <div class="d-flex justify-content-center my-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <p class="text-center text-muted">Processing manuscript...</p>
+                        </div>
+                        <div id="translationResult" class="d-none">
+                            <h3 class="h6 mb-2">Original Script:</h3>
+                            <p id="originalScript" class="mb-3"></p>
+                            
+                            <h3 class="h6 mb-2">Translated Text:</h3>
+                            <div class="border p-3 mb-3 bg-light">
+                                <p id="translatedText" class="mb-0"></p>
+                            </div>
+                            
+                            <h3 class="h6 mb-2">Summary:</h3>
+                            <div class="border p-3 bg-light">
+                                <p id="summary" class="mb-0"></p>
+                            </div>
+                            
+                            <p class="text-muted mt-3 mb-0 small">Processed at: <span id="processedAt"></span></p>
+                        </div>
+                        <div id="noTranslation">
+                            <p class="text-center text-muted my-4">No translation results yet. Upload a manuscript to begin.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h2 class="h5 mb-0">Summarization Result</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingSummary" class="d-none">
+                            <div class="d-flex justify-content-center my-4">
+                                <div class="spinner-border text-info" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <p class="text-center text-muted">Generating summary...</p>
+                        </div>
+                        <div id="summaryResult" class="d-none">
+                            <h3 class="h6 mb-2">Summary:</h3>
+                            <div class="border p-3 bg-light">
+                                <p id="directSummary" class="mb-0"></p>
+                            </div>
+                            
+                            <p class="text-muted mt-3 mb-0 small">Text length: <span id="textLength"></span> characters</p>
+                            <p class="text-muted mb-0 small">Processed at: <span id="summaryProcessedAt"></span></p>
+                        </div>
+                        <div id="noSummary">
+                            <p class="text-center text-muted my-4">No summarization results yet. Enter text to begin.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3 class="h5">About Ancient Script Decoder</h3>
+                    <p>A tool for translating and summarizing ancient manuscripts using advanced image processing and NLP techniques.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2023 Ancient Script Decoder</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

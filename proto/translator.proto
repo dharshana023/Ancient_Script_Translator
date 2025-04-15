@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package translator;
+
+option go_package = "ancient-script-decoder/proto";
+
+// TranslatorService defines the gRPC service for ancient script translation
+service TranslatorService {
+  // TranslateManuscript translates an ancient manuscript image to modern text
+  rpc TranslateManuscript(TranslateRequest) returns (TranslateResponse) {}
+  
+  // SummarizeText generates a summary for translated text
+  rpc SummarizeText(SummarizeRequest) returns (SummarizeResponse) {}
+}
+
+// TranslateRequest contains the manuscript image and script type
+message TranslateRequest {
+  bytes manuscript_image = 1;
+  string script_type = 2;
+}
+
+// TranslateResponse contains the translation and summary
+message TranslateResponse {
+  string original_script = 1;
+  string translated_text = 2;
+  string summary = 3;
+}
+
+// SummarizeRequest contains the text to summarize
+message SummarizeRequest {
+  string text = 1;
+}
+
+// SummarizeResponse contains the generated summary
+message SummarizeResponse {
+  string summary = 1;
+  int32 text_length = 2;
+}

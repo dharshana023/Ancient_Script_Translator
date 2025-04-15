@@ -1,0 +1,31 @@
+rest:
+  port: 5000
+grpc:
+  port: 8000
+imageProcessing:
+  enhancementEnabled: true
+  contrastFactor: 1.5
+  brightnessAdjust: 0.1
+  denoiseLevel: 2
+translation:
+  defaultTargetLanguage: "en"
+  supportedScripts:
+    - "latin"
+    - "greek"
+    - "cuneiform"
+    - "hieroglyphic"
+    - "runic"
+  useExternalAPI: false
+  apiEndpoint: ""
+  apiKey: ""
+summarization:
+  maxSummaryLength: 500
+  algorithm: "extractive"
+  modelPath: ""
+  sentenceImportance: 0.3
+  keywordImportance: 0.4
+  contextImportance: 0.3
+  contextWindowSize: 2
+  keyphrasesPerDoc: 5
+  minSentenceLength: 3
+  enableEntityRecognition: true

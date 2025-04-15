@@ -1,0 +1,74 @@
+/* Custom styles for Ancient Script Decoder */
+
+/* Body and general styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+}
+
+main {
+    flex: 1;
+}
+
+/* Card styles */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+/* Form styles */
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Result containers */
+.bg-light {
+    background-color: #f8f9fa !important;
+    border-radius: 0.25rem;
+}
+
+/* Button styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn svg {
+    margin-right: 0.5rem;
+}
+
+/* Header logo animation */
+header svg {
+    transition: transform 0.3s ease;
+}
+
+header:hover svg {
+    transform: rotate(5deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Text styling */
+#translatedText, #summary, #directSummary {
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Spinner styling */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
