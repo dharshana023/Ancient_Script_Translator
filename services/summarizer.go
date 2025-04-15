@@ -377,19 +377,74 @@ func (s *Summarizer) extractKeywords(text string, numKeywords int) []string {
                 // Weight by word length (longer words often carry more meaning)
                 lengthWeight := math.Log(float64(len(word)) + 1.0)
                 
-                // Combine the factors
-                wordScores[word] = tf * uniqueness * lengthWeight
+                // Positional weight (words appearing at the beginning/end often more important)
+                posWeight := 1.0
+                firstPos := -1
+                lastPos := -1
+                for i, w := range filteredWords {
+                        if w == word {
+                                if firstPos == -1 {
+                                        firstPos = i
+                                }
+                                lastPos = i
+                        }
+                }
+                
+                // Add position weight if word appears near beginning or end
+                if firstPos != -1 {
+                        // Weight words appearing early in the text
+                        if float64(firstPos) < totalWords*0.2 {
+                                posWeight = 1.3
+                        } else if float64(lastPos) > totalWords*0.8 {
+                                // Weight words appearing late in the text
+                                posWeight = 1.2
+                        }
+                }
+                
+                // Check for capitalized forms of the word in original text for potential named entities
+                capitalizedWeight := 1.0
+                upperCaseWord := strings.Title(word)
+                if strings.Contains(text, upperCaseWord) {
+                        capitalizedWeight = 1.5 // Give more weight to potential named entities
+                }
+                
+                // Combine all the factors
+                wordScores[word] = tf * uniqueness * lengthWeight * posWeight * capitalizedWeight
         }
         
-        // Create sorted slice of word scores
+        // Now extract bigrams (two-word phrases) for more specific concepts
+        bigramScores := make(map[string]float64)
+        if len(filteredWords) > 1 {
+                for i := 0; i < len(filteredWords)-1; i++ {
+                        w1 := filteredWords[i]
+                        w2 := filteredWords[i+1]
+                        
+                        // Skip if either word is too short
+                        if len(w1) <= 2 || len(w2) <= 2 {
+                                continue
+                        }
+                        
+                        bigram := w1 + " " + w2
+                        bigramScores[bigram] = (wordScores[w1] + wordScores[w2]) * 0.8 // Small discount for bigrams
+                }
+        }
+        
+        // Combine unigram and bigram scores
         type wordScore struct {
                 word  string
                 score float64
         }
         
-        scores := make([]wordScore, 0, len(wordScores))
+        scores := make([]wordScore, 0, len(wordScores)+len(bigramScores))
+        
+        // Add unigrams (single words)
         for word, score := range wordScores {
                 scores = append(scores, wordScore{word, score})
+        }
+        
+        // Add bigrams (two-word phrases)
+        for bigram, score := range bigramScores {
+                scores = append(scores, wordScore{bigram, score})
         }
         
         // Sort by score (descending)
@@ -397,12 +452,38 @@ func (s *Summarizer) extractKeywords(text string, numKeywords int) []string {
                 return scores[i].score > scores[j].score
         })
         
-        // Take the top keywords
+        // Take the top keywords, but ensure some diversity
         n := min(numKeywords, len(scores))
-        keywords := make([]string, n)
+        keywords := make([]string, 0, n)
         
-        for i := 0; i < n; i++ {
-                keywords[i] = scores[i].word
+        // Add top scoring items while ensuring diversity
+        added := 0
+        usedWords := make(map[string]bool)
+        
+        for i := 0; i < len(scores) && added < n; i++ {
+                candidate := scores[i].word
+                
+                // Check if this candidate contains words we've already used
+                words := strings.Fields(candidate)
+                overlap := false
+                
+                for _, word := range words {
+                        if usedWords[word] {
+                                overlap = true
+                                break
+                        }
+                }
+                
+                // If there's no overlap with existing keywords, add it
+                if !overlap || len(keywords) < 2 { // Always include at least 2 top items
+                        keywords = append(keywords, candidate)
+                        added++
+                        
+                        // Mark words as used
+                        for _, word := range words {
+                                usedWords[word] = true
+                        }
+                }
         }
         
         return keywords
@@ -686,6 +767,16 @@ func (s *Summarizer) refineExtractiveWithAbstractive(extractiveSummary string, c
         numConcepts := min(3, len(concepts))
         topConcepts := concepts[:numConcepts]
         
+        // Check for bigrams (multi-word concepts)
+        for i, concept := range topConcepts {
+                // If we find a bigram, ensure it's prioritized by moving it to the front
+                if strings.Contains(concept, " ") && i > 0 {
+                        // Move the bigram to the front
+                        topConcepts = append([]string{concept}, append(topConcepts[:i], topConcepts[i+1:]...)...)
+                        break
+                }
+        }
+        
         // Generate a hash-like value from the concepts to create variation
         // This ensures different text inputs get different intro styles
         contentHash := 0
@@ -695,23 +786,114 @@ func (s *Summarizer) refineExtractiveWithAbstractive(extractiveSummary string, c
                 }
         }
         
-        // Use the hash to select different intro styles
-        switch contentHash % 5 {
-        case 0:
-                intro = fmt.Sprintf("This manuscript centers around %s. ", strings.Join(topConcepts, ", "))
-        case 1:
-                intro = fmt.Sprintf("The document primarily explores themes of %s. ", strings.Join(topConcepts, ", "))
-        case 2:
-                if numConcepts == 1 {
-                        intro = fmt.Sprintf("The key focus of this text is %s. ", topConcepts[0])
-                } else {
-                        intro = fmt.Sprintf("Key topics covered include %s. ", strings.Join(topConcepts, ", "))
-                }
-        case 3:
-                intro = fmt.Sprintf("This ancient text contains significant references to %s. ", strings.Join(topConcepts, ", "))
-        default:
-                intro = fmt.Sprintf("Analysis of this document reveals emphasis on %s. ", strings.Join(topConcepts, ", "))
+        // Calculate text characteristics to guide the template selection
+        isHistorical := false
+        isScientific := false
+        isPolitical := false
+        isLiterary := false
+        
+        // Look for domain-specific keywords in the concepts and extractive summary
+        combined := strings.ToLower(extractiveSummary + " " + strings.Join(topConcepts, " "))
+        
+        // Historical text markers
+        if strings.Contains(combined, "century") || 
+           strings.Contains(combined, "ancient") || 
+           strings.Contains(combined, "medieval") || 
+           strings.Contains(combined, "era") || 
+           strings.Contains(combined, "period") || 
+           strings.Contains(combined, "dynasty") || 
+           strings.Contains(combined, "bc") || 
+           strings.Contains(combined, "ad") {
+                isHistorical = true
         }
+        
+        // Scientific text markers
+        if strings.Contains(combined, "theor") || 
+           strings.Contains(combined, "physics") || 
+           strings.Contains(combined, "mathemat") || 
+           strings.Contains(combined, "scien") || 
+           strings.Contains(combined, "biolog") || 
+           strings.Contains(combined, "chemi") {
+                isScientific = true
+        }
+        
+        // Political text markers
+        if strings.Contains(combined, "govern") || 
+           strings.Contains(combined, "politic") || 
+           strings.Contains(combined, "democra") || 
+           strings.Contains(combined, "nation") || 
+           strings.Contains(combined, "state") || 
+           strings.Contains(combined, "law") {
+                isPolitical = true
+        }
+        
+        // Literary text markers
+        if strings.Contains(combined, "novel") || 
+           strings.Contains(combined, "poem") || 
+           strings.Contains(combined, "author") || 
+           strings.Contains(combined, "character") || 
+           strings.Contains(combined, "litera") || 
+           strings.Contains(combined, "story") {
+                isLiterary = true
+        }
+        
+        // Comment: Default is descriptive text if none of the specialized categories match
+        
+        // Expanded template library with domain-specific variations
+        templates := []string{}
+        
+        // Add domain-specific templates
+        if isHistorical {
+                templates = append(templates,
+                        "This historical manuscript documents %s in notable detail.",
+                        "The historical record highlights %s as central elements.",
+                        "Chronicling events related to %s, this historical text provides valuable insights.",
+                        "This historical account emphasizes the significance of %s.",
+                )
+        } else if isScientific {
+                templates = append(templates, 
+                        "This scientific text explores principles of %s with analytical precision.",
+                        "Examining %s, this scientific manuscript offers a systematic analysis.",
+                        "The scientific observations focus primarily on %s and their relationships.",
+                        "This scientific document presents findings related to %s.",
+                )
+        } else if isPolitical {
+                templates = append(templates, 
+                        "This political analysis examines %s and their broader implications.",
+                        "Addressing political concerns around %s, this document provides context.",
+                        "The political discourse centers on issues of %s.",
+                        "This text analyzes political dimensions of %s.",
+                )
+        } else if isLiterary {
+                templates = append(templates, 
+                        "This literary work weaves together themes of %s into its narrative.",
+                        "The literary exploration of %s creates a rich textual landscape.",
+                        "Employing %s as central motifs, this text creates literary depth.",
+                        "This narrative develops around concepts of %s.",
+                )
+        } else { // Descriptive/general templates
+                templates = append(templates,
+                        "This manuscript centers around %s.",
+                        "The document primarily explores themes of %s.",
+                        "Key topics covered include %s.",
+                        "This text contains significant references to %s.",
+                        "Analysis of this document reveals emphasis on %s.",
+                        "The text focuses on examining %s in detail.",
+                        "This document presents a comprehensive overview of %s.",
+                        "Central to this manuscript are the concepts of %s.",
+                )
+        }
+        
+        // Select template based on content hash
+        templateIndex := contentHash % len(templates)
+        selectedTemplate := templates[templateIndex]
+        
+        // Format with concepts
+        conceptsStr := strings.Join(topConcepts, ", ")
+        intro = fmt.Sprintf(selectedTemplate+" ", conceptsStr)
+        
+        // Ensure proper capitalization
+        intro = strings.ToUpper(intro[:1]) + intro[1:]
         
         return intro + extractiveSummary
 }

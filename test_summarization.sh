@@ -19,4 +19,12 @@ curl -s -X POST -H "Content-Type: application/json" -d '{
     "algorithm": "hybrid"
 }' http://localhost:5000/api/summarize
 
+echo -e "\nSending test request 3..."
+
+# Third test text (different topic - literature)
+curl -s -X POST -H "Content-Type: application/json" -d '{
+    "text": "Shakespeare wrote 37 plays and 154 sonnets. His works include tragedies such as Hamlet, Macbeth, and Romeo and Juliet, as well as comedies like A Midsummer Nights Dream and Much Ado About Nothing. His plays continue to be performed and adapted worldwide, influencing literature, theater, and popular culture. Shakespeares use of language and his exploration of human emotions set a standard for storytelling.",
+    "algorithm": "hybrid"
+}' http://localhost:5000/api/summarize
+
 echo -e "\nThe summaries should be different if the fix is working correctly."
