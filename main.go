@@ -6,6 +6,7 @@ import (
         "net/http"
         "os"
         "os/signal"
+        "strconv"
         "syscall"
         "time"
 
@@ -27,6 +28,17 @@ func main() {
         config, err := utils.LoadConfig(*configPath)
         if err != nil {
                 logger.Fatal("Failed to load configuration", "error", err)
+        }
+        
+        // Override port with environment variable if available
+        if port := os.Getenv("PORT"); port != "" {
+                portNum, err := strconv.Atoi(port)
+                if err == nil {
+                        config.REST.Port = portNum
+                        logger.Info("Using PORT environment variable", "port", portNum)
+                } else {
+                        logger.Error("Failed to parse PORT environment variable", "error", err)
+                }
         }
 
         // Create cancellation context for cleanup

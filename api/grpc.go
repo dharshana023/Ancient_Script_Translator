@@ -32,7 +32,7 @@ func NewGRPCServer(port int, serviceHandler *services.ServiceHandler, logger *ut
 
 // Start starts the gRPC server
 func (s *GRPCServer) Start() error {
-        lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", s.port))
+        lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
         if err != nil {
                 return fmt.Errorf("failed to listen: %v", err)
         }

@@ -44,9 +44,9 @@ func (s *RESTServer) Start() error {
         fs := http.FileServer(http.Dir("static"))
         mux.Handle("/", fs)
 
-        // Create HTTP server
+        // Create HTTP server - ensure binding to all interfaces and the correct port
         s.server = &http.Server{
-                Addr:         fmt.Sprintf("0.0.0.0:%d", s.port),
+                Addr:         fmt.Sprintf("0.0.0.0:%d", s.port), // Explicitly binding to all available network interfaces
                 Handler:      mux,
                 ReadTimeout:  60 * time.Second,
                 WriteTimeout: 60 * time.Second,

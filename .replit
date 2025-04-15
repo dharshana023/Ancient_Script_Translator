@@ -1,4 +1,4 @@
-modules = ["go", "golang-1.21", "python-3.11"]
+modules = ["go", "golang-1.21", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
@@ -27,11 +27,11 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go"
+args = "PORT=5000 go run main.go"
 waitForPort = 5000
 
 [deployment]
-run = ["sh", "-c", "go run main.go"]
+run = ["sh", "-c", "PORT=5000 go run main.go"]
 
 [[ports]]
 localPort = 5000
