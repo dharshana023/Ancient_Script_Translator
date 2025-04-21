@@ -1,12 +1,30 @@
 rest:
   port: 5000
+  host: "0.0.0.0"
 grpc:
   port: 8000
+  host: "0.0.0.0"
+tcp:
+  enabled: true
+  port: 8001
+  maxConnections: 100
+  timeout: 30
+udp:
+  enabled: true
+  port: 8002
+  bufferSize: 4096
 imageProcessing:
   enhancementEnabled: true
   contrastFactor: 1.5
   brightnessAdjust: 0.1
   denoiseLevel: 2
+  gaussianBlurSigma: 1.5
+  gaussianBlurSize: 5
+  boxBlurSize: 3
+  sobelThreshold: 30
+  rotationAngle: 0.0
+  concurrencyLevel: 4
+  useParallelProcessing: true
 translation:
   defaultTargetLanguage: "en"
   supportedScripts:
@@ -18,6 +36,8 @@ translation:
   useExternalAPI: false
   apiEndpoint: ""
   apiKey: ""
+  batchSize: 10
+  concurrency: 4
 summarization:
   maxSummaryLength: 500
   algorithm: "extractive"
@@ -29,10 +49,17 @@ summarization:
   keyphrasesPerDoc: 5
   minSentenceLength: 3
   enableEntityRecognition: true
-
 metadata:
   enableGeographicDetection: true
   enablePeriodDetection: true
   enableCultureDetection: true
+  enableMaterialAnalysis: true
+  enableHistoricalEventDetection: true
   contextSensitivity: 0.7
   referenceDatabase: ""
+streamlit:
+  enabled: true
+  port: 8501
+  theme: "light"
+  title: "Ancient Script Translator"
+  showProgressBar: true

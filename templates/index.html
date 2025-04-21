@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ancient Script Translator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .header-container {
+            background-color: #343a40;
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        .card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #495057;
+            color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            padding: 20px;
+        }
+        #preview-image, #original-image, #processed-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .metadata-section {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .tab-pane {
+            padding: 20px 0;
+        }
+        .historical-event {
+            border-left: 4px solid #6c757d;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .confidence-score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .api-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .api-status.healthy {
+            background-color: #28a745;
+            color: white;
+        }
+        .api-status.unhealthy {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-container text-center">
+            <h1>Ancient Script Translator</h1>
+            <p class="lead">Decode and analyze ancient scripts with advanced AI technology</p>
+            <div class="api-status healthy">
+                API Status: Healthy
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image" type="button" role="tab" aria-controls="image" aria-selected="true">Image Translation</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button" role="tab" aria-controls="text" aria-selected="false">Text Translation</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab" aria-controls="metadata" aria-selected="false">Metadata & Summary</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Image Translation Tab -->
+            <div class="tab-pane fade show active" id="image" role="tabpanel" aria-labelledby="image-tab">
+                <div class="card">
+                    <div class="card-header">Upload Image with Ancient Script</div>
+                    <div class="card-body">
+                        <form id="image-upload-form">
+                            <div class="mb-3">
+                                <label for="image-file" class="form-label">Select Image</label>
+                                <input class="form-control" type="file" id="image-file" accept="image/*" onchange="previewImage(this)">
+                                <div class="mt-3">
+                                    <img id="preview-image" style="display: none;" alt="Preview">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="script-type" class="form-label">Script Type</label>
+                                        <select class="form-select" id="script-type">
+                                            {% for script_type in script_types %}
+                                            <option value="{{ script_type }}">{{ script_type|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="image-algorithm" class="form-label">Image Processing</label>
+                                        <select class="form-select" id="image-algorithm">
+                                            {% for algorithm in image_algorithms %}
+                                            <option value="{{ algorithm }}">{{ algorithm|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" onclick="translateImage()">Process & Translate</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div id="image-results" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">Original Image</div>
+                                <div class="card-body text-center">
+                                    <img id="original-image" alt="Original Image">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">Processed Image</div>
+                                <div class="card-body text-center">
+                                    <img id="processed-image" alt="Processed Image">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">Translation Results</div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong>Detected Script:</strong> <span id="image-detected-script"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Confidence Score:</strong> <span id="image-confidence-score" class="confidence-score"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="original-text" class="form-label">Original Text</label>
+                                        <textarea class="form-control" id="original-text" rows="5" readonly></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="translated-text" class="form-label">Translated Text</label>
+                                        <textarea class="form-control" id="translated-text" rows="5" readonly></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="image-metadata-container" class="metadata-section">
+                        <!-- Metadata will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Text Translation Tab -->
+            <div class="tab-pane fade" id="text" role="tabpanel" aria-labelledby="text-tab">
+                <div class="card">
+                    <div class="card-header">Translate Ancient Text</div>
+                    <div class="card-body">
+                        <form id="text-translation-form">
+                            <div class="mb-3">
+                                <label for="input-text" class="form-label">Enter Ancient Text</label>
+                                <textarea class="form-control" id="input-text" rows="6" placeholder="Enter text for translation..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="text-script-type" class="form-label">Script Type</label>
+                                <select class="form-select" id="text-script-type">
+                                    {% for script_type in script_types %}
+                                    <option value="{{ script_type }}">{{ script_type|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" onclick="translateText()">Translate Text</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div id="text-results" style="display: none;">
+                    <div class="card mt-4">
+                        <div class="card-header">Translation Results</div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong>Detected Script:</strong> <span id="text-detected-script"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Confidence Score:</strong> <span id="text-confidence-score" class="confidence-score"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="text-translated-text" class="form-label">Translated Text</label>
+                                <textarea class="form-control" id="text-translated-text" rows="6" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="text-metadata-container" class="metadata-section">
+                        <!-- Metadata will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Metadata & Summary Tab -->
+            <div class="tab-pane fade" id="metadata" role="tabpanel" aria-labelledby="metadata-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Extract Metadata</div>
+                            <div class="card-body">
+                                <form id="metadata-form">
+                                    <div class="mb-3">
+                                        <label for="metadata-text" class="form-label">Enter Ancient Text</label>
+                                        <textarea class="form-control" id="metadata-text" rows="6" placeholder="Enter text for metadata extraction..."></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="metadata-script-type" class="form-label">Script Type</label>
+                                        <select class="form-select" id="metadata-script-type">
+                                            {% for script_type in script_types %}
+                                            <option value="{{ script_type }}">{{ script_type|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-primary" onclick="extractMetadata()">Extract Metadata</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Generate Summary</div>
+                            <div class="card-body">
+                                <form id="summary-form">
+                                    <div class="mb-3">
+                                        <label for="summary-text" class="form-label">Enter Ancient Text</label>
+                                        <textarea class="form-control" id="summary-text" rows="6" placeholder="Enter text for summarization..."></textarea>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-primary" onclick="generateSummary()">Generate Summary</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div id="extracted-metadata-container" style="display: none;" class="metadata-section">
+                            <!-- Extracted metadata will be added here dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div id="summary-results" style="display: none;" class="card">
+                            <div class="card-header">Summary</div>
+                            <div class="card-body">
+                                <div id="summary-container"></div>
+                                <div class="mt-3">
+                                    <p><strong>Original Text Length:</strong> <span id="summary-text-length"></span> characters</p>
+                                    <p><strong>Processed At:</strong> <span id="summary-processed-at"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="my-5 pt-5 text-muted text-center text-small">
+            <p class="mb-1">© 2025 Ancient Script Translator</p>
+            <p>Developed for historical and archaeological analysis</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check API health on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiHealth();
+        });
+        
+        // Function to check API health
+        function checkApiHealth() {
+            fetch('/health')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('API health check failed');
+                })
+                .then(data => {
+                    const statusElement = document.querySelector('.api-status');
+                    if (data.status === 'healthy') {
+                        statusElement.classList.add('healthy');
+                        statusElement.classList.remove('unhealthy');
+                        statusElement.textContent = 'API Status: Healthy';
+                    } else {
+                        statusElement.classList.add('unhealthy');
+                        statusElement.classList.remove('healthy');
+                        statusElement.textContent = 'API Status: Unhealthy';
+                    }
+                })
+                .catch(error => {
+                    const statusElement = document.querySelector('.api-status');
+                    statusElement.classList.add('unhealthy');
+                    statusElement.classList.remove('healthy');
+                    statusElement.textContent = 'API Status: Unreachable';
+                    console.error('Health check error:', error);
+                });
+        }
+        
+        // Preview the selected image
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const previewImage = document.getElementById('preview-image');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // Translate image
+        function translateImage() {
+            const fileInput = document.getElementById('image-file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select an image first.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('script_type', document.getElementById('script-type').value);
+            formData.append('algorithm', document.getElementById('image-algorithm').value);
+            
+            fetch('/translate-image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to translate image');
+            })
+            .then(data => {
+                // Display results
+                document.getElementById('image-results').style.display = 'block';
+                
+                // Set original image
+                document.getElementById('original-image').src = document.getElementById('preview-image').src;
+                
+                // Set processed image (currently same as original, would be replaced with actual processed image)
+                document.getElementById('processed-image').src = document.getElementById('preview-image').src;
+                
+                // Fill in translation results
+                document.getElementById('image-detected-script').textContent = data.detectedScript;
+                document.getElementById('image-confidence-score').textContent = (data.confidenceScore * 100).toFixed(1) + '%';
+                document.getElementById('original-text').value = data.originalText;
+                document.getElementById('translated-text').value = data.translatedText;
+                
+                // Display metadata if available
+                if (data.metadata) {
+                    displayMetadata(data.metadata, 'image-metadata-container');
+                }
+            })
+            .catch(error => {
+                console.error('Translation error:', error);
+                alert('An error occurred during translation. Please try again.');
+            });
+        }
+        
+        // Translate text
+        function translateText() {
+            const inputText = document.getElementById('input-text').value.trim();
+            if (!inputText) {
+                alert('Please enter text for translation.');
+                return;
+            }
+            
+            const data = {
+                text: inputText,
+                script_type: document.getElementById('text-script-type').value
+            };
+            
+            fetch('/translate-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to translate text');
+            })
+            .then(data => {
+                // Display results
+                document.getElementById('text-results').style.display = 'block';
+                
+                // Fill in translation results
+                document.getElementById('text-detected-script').textContent = data.detectedScript;
+                document.getElementById('text-confidence-score').textContent = (data.confidenceScore * 100).toFixed(1) + '%';
+                document.getElementById('text-translated-text').value = data.translatedText;
+                
+                // Display metadata if available
+                if (data.metadata) {
+                    displayMetadata(data.metadata, 'text-metadata-container');
+                }
+            })
+            .catch(error => {
+                console.error('Translation error:', error);
+                alert('An error occurred during translation. Please try again.');
+            });
+        }
+        
+        // Extract metadata
+        function extractMetadata() {
+            const inputText = document.getElementById('metadata-text').value.trim();
+            if (!inputText) {
+                alert('Please enter text for metadata extraction.');
+                return;
+            }
+            
+            const data = {
+                text: inputText,
+                script_type: document.getElementById('metadata-script-type').value
+            };
+            
+            fetch('/extract-metadata', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to extract metadata');
+            })
+            .then(data => {
+                // Display results
+                document.getElementById('extracted-metadata-container').style.display = 'block';
+                
+                // Display metadata
+                if (data.metadata) {
+                    displayMetadata(data.metadata, 'extracted-metadata-container');
+                }
+            })
+            .catch(error => {
+                console.error('Metadata extraction error:', error);
+                alert('An error occurred during metadata extraction. Please try again.');
+            });
+        }
+        
+        // Generate summary
+        function generateSummary() {
+            const inputText = document.getElementById('summary-text').value.trim();
+            if (!inputText) {
+                alert('Please enter text for summarization.');
+                return;
+            }
+            
+            const data = {
+                text: inputText
+            };
+            
+            fetch('/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to generate summary');
+            })
+            .then(data => {
+                // Display results
+                document.getElementById('summary-results').style.display = 'block';
+                
+                // Fill in summary results
+                document.getElementById('summary-container').innerHTML = `<p>${data.summary}</p>`;
+                document.getElementById('summary-text-length').textContent = data.textLength;
+                document.getElementById('summary-processed-at').textContent = data.processedAt;
+            })
+            .catch(error => {
+                console.error('Summarization error:', error);
+                alert('An error occurred during summarization. Please try again.');
+            });
+        }
+        
+        // Display metadata in a structured format
+        function displayMetadata(metadata, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            let html = '<h4 class="mb-4">Historical Metadata</h4>';
+            
+            // Time Period
+            if (metadata.timePeriod) {
+                const tp = metadata.timePeriod;
+                html += `
+                <div class="mb-4">
+                    <h5>Time Period</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Period:</strong> ${tp.periodName || 'Unknown'}</p>
+                            <p><strong>Era:</strong> ${tp.era || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Start Year:</strong> ${tp.startYear || 'Unknown'}</p>
+                            <p><strong>End Year:</strong> ${tp.endYear || 'Unknown'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            // Geographical Origin
+            if (metadata.geographicalOrigin) {
+                const geo = metadata.geographicalOrigin;
+                html += `
+                <div class="mb-4">
+                    <h5>Geographical Origin</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Region:</strong> ${geo.region || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>City:</strong> ${geo.city || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Site:</strong> ${geo.site || 'Unknown'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            // Cultural Context
+            if (metadata.culturalContext) {
+                const culture = metadata.culturalContext;
+                html += `
+                <div class="mb-4">
+                    <h5>Cultural Context</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Civilization:</strong> ${culture.civilization || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Period:</strong> ${culture.period || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Language Family:</strong> ${culture.languageFamily || 'Unknown'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            // Material Context
+            if (metadata.materialContext) {
+                const material = metadata.materialContext;
+                html += `
+                <div class="mb-4">
+                    <h5>Material Context</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Material:</strong> ${material.material || 'Unknown'}</p>
+                            <p><strong>Preservation:</strong> ${material.preservation || 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Creation Technique:</strong> ${material.creationTechnique || 'Unknown'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            // Historical Events
+            if (metadata.historicalEvents && metadata.historicalEvents.length > 0) {
+                html += '<div class="mb-4"><h5>Historical Events</h5>';
+                
+                metadata.historicalEvents.forEach(event => {
+                    html += `
+                    <div class="historical-event">
+                        <h6>${event.name || 'Unknown Event'}</h6>
+                        <p><strong>Date:</strong> ${event.date || 'Unknown'}</p>
+                        <p><strong>Description:</strong> ${event.description || 'No description available'}</p>
+                        <p><strong>Significance:</strong> ${event.significance || 'Unknown'}</p>
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

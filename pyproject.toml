@@ -4,5 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
+    "flask>=3.1.0",
+    "numpy>=2.2.5",
+    "pillow>=11.2.1",
+    "requests>=2.32.3",
+    "streamlit>=1.44.1",
     "trafilatura>=2.0.0",
 ]
