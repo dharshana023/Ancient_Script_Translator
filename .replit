@@ -2,7 +2,7 @@ modules = ["go", "golang-1.21", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
+packages = ["freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "pkg-config", "tcl", "tk", "xsimd", "zlib"]
 
 [workflows]
 runButton = "Project"
