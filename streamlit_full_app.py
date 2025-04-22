@@ -189,6 +189,13 @@ def translate_image(image, script_type, algorithm):
             "This appears to be an astronomical text tracking the movements of Venus and recording eclipses for divinatory purposes.",
             "The glyphs describe an elaborate bloodletting ritual performed by royal family members to communicate with ancestral spirits.",
             "This monument records dynastic information and genealogy for a ruler, establishing their divine right to kingship through ancestral connections."
+        ],
+        "tamil": [
+            "This Tamil inscription appears to be from the Chola period, describing temple donations and land grants to Brahmin scholars.",
+            "The text contains verses from ancient Tamil Sangam literature, specifically discussing ethics, love, and warfare.",
+            "This inscription details trade agreements between Tamil merchants and foreign traders, including spice and textile commerce.",
+            "The text appears to be a royal proclamation from a Pandya king, recording military victories and temple construction.",
+            "This seems to be a poetic work in the style of Thirukkural, discussing moral values and righteous living."
         ]
     }
     
@@ -365,6 +372,36 @@ def extract_metadata(text, script_type):
         }
     }
     
+    metadata["tamil"] = {
+        "time_period": {
+            "era": "Classical Tamil Period",
+            "start_year": "300 BCE",
+            "end_year": "1300 CE",
+            "specific_period": "Chola Dynasty"
+        },
+        "geographical_origin": {
+            "region": "South India",
+            "city": "Thanjavur",
+            "specific_site": "Brihadeshwara Temple"
+        },
+        "cultural_context": {
+            "civilization": "Tamil",
+            "language_family": "Dravidian",
+            "writing_system": "Tamil Script"
+        },
+        "material_context": {
+            "material": "Stone/Copper plates",
+            "preservation": "Well-preserved",
+            "creation_technique": "Carved inscription"
+        },
+        "historical_events": [
+            "Reign of Raja Raja Chola I (985-1014 CE)",
+            "Construction of the Brihadeshwara Temple",
+            "Maritime trade with Southeast Asia",
+            "Development of Tamil literature and poetry",
+            "Cultural exchanges with the Srivijaya Empire"
+        ]
+    }
     return metadata.get(script_type.lower(), {})
 
 def summarize_text(text, algorithm=""):
@@ -507,7 +544,7 @@ with tab1:
         with col1:
             script_type = st.selectbox(
                 "Select script type",
-                ["hieroglyphic", "cuneiform", "greek", "latin", "runic", "demotic", "phoenician", "aramaic", "sanskrit", "mayan"]
+                ["hieroglyphic", "cuneiform", "greek", "latin", "runic", "demotic", "phoenician", "aramaic", "sanskrit", "mayan", "tamil"]
             )
         
         with col2:
