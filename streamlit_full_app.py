@@ -52,13 +52,16 @@ def process_image(image, algorithm):
         return Image.fromarray(result.astype(np.uint8))
     
     elif algorithm == "edge_detection":
-        # Simple edge detection using Sobel filters
+        # Enhanced edge detection using Sobel filters
         from scipy import ndimage
         if len(img_array.shape) == 3:
             # Convert to grayscale first for edge detection
-            gray = np.dot(img_array[...,:3], [0.2989, 0.5870, 0.1140]).astype(np.uint8)
+            gray = np.dot(img_array[...,:3], [0.2989, 0.5870, 0.1140]).astype(np.float32)
         else:
-            gray = img_array
+            gray = img_array.astype(np.float32)
+            
+        # Apply Gaussian blur to reduce noise
+        gray = ndimage.gaussian_filter(gray, sigma=1.0)
             
         # Apply Sobel filters
         sobel_x = ndimage.sobel(gray, axis=0)
@@ -67,8 +70,12 @@ def process_image(image, algorithm):
         # Compute magnitude
         magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
         
-        # Normalize to 0-255
-        magnitude = 255 * magnitude / np.max(magnitude)
+        # Normalize to 0-255 with improved contrast
+        magnitude = np.clip(magnitude * 1.5, 0, 255)  # Increase contrast
+        
+        # Apply threshold to make edges more distinct
+        threshold = np.mean(magnitude) * 0.6
+        magnitude[magnitude < threshold] = 0
         
         return Image.fromarray(magnitude.astype(np.uint8))
     
